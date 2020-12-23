@@ -1,0 +1,19 @@
+fairseq-preprocess \
+        --only-source \
+        --srcdict dict.txt \
+        --validpref dev_uniref50.txt \
+        --testpref test_uniref50.txt \
+        --destdir test_valid \
+        --workers 60
+        
+        
+        
+for ((i = 0 ; i < 21 ; i++)); do
+    iz=`printf "%02d" $i`
+    cp test_valid/test.bin test_valid/test.idx test_valid/valid.bin test_valid/valid.idx /projects/deepgreen/pstjohn/split_bin/train_$iz/    
+done
+
+/* for ((i = 0 ; i < 10 ; i++)); do */
+/*     iz=`printf "%02d" $i` */
+/*     cp test_valid/test.bin test_valid/test.idx test_valid/valid.bin test_valid/valid.idx /projects/deepgreen/pstjohn/split_bin_debug/train_$iz/     */
+/* done */
