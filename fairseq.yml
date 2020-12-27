@@ -1,0 +1,13 @@
+name: fairseq
+channels:
+  - conda-forge
+  - defaults
+dependencies:
+  - python=3.7
+  - jupyterlab
+  - jupyter
+  - notebook
+  - seaborn
+  - pandas
+  - tqdm
+  - pytorch-cpu
