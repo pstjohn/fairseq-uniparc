@@ -1,1 +1,1 @@
-from ontology.ontology import Ontology
+from .ontology import Ontology

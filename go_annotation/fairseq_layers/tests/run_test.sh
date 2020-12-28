@@ -1,0 +1,18 @@
+fairseq-train /Users/pstjohn/Box/nrel_research/fairseq-uniparc/go_annotation/eagle/criterion_development/fairseq_swissprot_debug \
+	--task sentence_labeling \
+	--user-dir /Users/pstjohn/Box/nrel_research/fairseq-uniparc/go_annotation/ \
+	--arch roberta_base \
+	--criterion go_prediction \
+	--regression-target \
+	--num-classes 32012 \
+	--batch-size 2 \
+	--total-num-update 10 \
+	--max-positions 512 \
+  --shorten-method='random_crop' \
+	--reset-optimizer --reset-dataloader --reset-meters \
+	--weight-decay 0.1 --optimizer adam --adam-betas "(0.9, 0.98)" --adam-eps 1e-06 \
+	--clip-norm 0.0 \
+	--lr-scheduler polynomial_decay --lr 1e-05 \
+	--dropout 0.1 --attention-dropout 0.1 \
+	--save-interval 1 \
+	--log-format simple --log-interval 1

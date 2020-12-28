@@ -1,6 +1,7 @@
 import logging
 import os
 
+import fairseq
 import numpy as np
 from fairseq.data import (
     ConcatSentencesDataset, IdDataset,
@@ -10,7 +11,7 @@ from fairseq.data import (
     RawLabelDataset, RightPadDataset,
     RollDataset, SortDataset, StripTokenDataset, data_utils)
 from fairseq.data.shorten_dataset import maybe_shorten_dataset
-from fairseq.tasks import register_task
+from fairseq.tasks import FairseqTask, register_task
 from fairseq.tasks.sentence_prediction import SentencePredictionTask
 
 logger = logging.getLogger(__name__)
@@ -105,8 +106,10 @@ class SentenceLabelingTask(SentencePredictionTask):
         label_path = "{0}.label".format(get_path("label", split))
         if os.path.exists(label_path):
             def parse_regression_target(i, line):
+                # Creates a 1-hot vector of args.num_classes from the integer class labels.
                 values = line.split()
-                return [int(x) for x in values]
+                int_values = [int(x) for x in values]
+                return [1. if i in int_values else 0. for i in range(self.args.num_classes)]
 
             with open(label_path) as h:
                 dataset.update(

@@ -10,4 +10,5 @@ dependencies:
   - seaborn
   - pandas
   - tqdm
-  - pytorch-cpu
+  - pytorch
+  - pytorch_scatter
