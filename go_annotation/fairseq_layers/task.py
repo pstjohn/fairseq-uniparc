@@ -1,18 +1,19 @@
 import logging
 import os
 
-import fairseq
 import numpy as np
 from fairseq.data import (
     ConcatSentencesDataset, IdDataset,
     NestedDictionaryDataset, NumSamplesDataset, NumelDataset,
-    OffsetTokensDataset,
     PrependTokenDataset,
-    RawLabelDataset, RightPadDataset,
-    RollDataset, SortDataset, StripTokenDataset, data_utils)
+    RightPadDataset,
+    RollDataset, SortDataset, data_utils)
 from fairseq.data.shorten_dataset import maybe_shorten_dataset
-from fairseq.tasks import FairseqTask, register_task
+from fairseq.tasks import register_task
 from fairseq.tasks.sentence_prediction import SentencePredictionTask
+from scipy.sparse import load_npz
+
+from go_annotation.fairseq_layers.dataset import CSRLabelDataset
 
 logger = logging.getLogger(__name__)
 
@@ -103,23 +104,10 @@ class SentenceLabelingTask(SentencePredictionTask):
                 prev_output_tokens=prev_tokens_dataset,
             )
 
-        label_path = "{0}.label".format(get_path("label", split))
+        label_path = "{0}.npz".format(get_path("label", split))
         if os.path.exists(label_path):
-            def parse_regression_target(i, line):
-                # Creates a 1-hot vector of args.num_classes from the integer class labels.
-                values = line.split()
-                int_values = [int(x) for x in values]
-                return [1. if i in int_values else 0. for i in range(self.args.num_classes)]
-
-            with open(label_path) as h:
-                dataset.update(
-                    target=RawLabelDataset(
-                        [
-                            parse_regression_target(i, line.strip())
-                            for i, line in enumerate(h.readlines())
-                        ]
-                    )
-                )
+            csr_matrix = load_npz(label_path)
+            dataset.update(target=CSRLabelDataset(csr_matrix))
 
         nested_dataset = NestedDictionaryDataset(
             dataset,
