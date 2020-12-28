@@ -48,7 +48,7 @@ class GOPredictionCriterion(SentencePredictionCriterion):
         sample_size = targets.numel()
 
         # Normalize logits by ontology logic, requiring that child nodes have a lower score than parents
-        normed_logits = scatter(torch.gather(logits, 1, term_tensor), ancestor_tensor, reduce='min')
+        normed_logits = scatter(torch.gather(logits, 1, term_tensor).float(), ancestor_tensor, reduce='min')
         loss = F.binary_cross_entropy_with_logits(normed_logits, targets, reduction="sum")
 
         logging_output = {
