@@ -39,7 +39,7 @@ class GOPredictionCriterion(SentencePredictionCriterion):
             f"classification head must match ontology nodes, {ont.total_nodes}"
 
         def convert_and_resize(x):
-            return torch.tensor(x).unsqueeze(0).expand((logits.shape[0], -1))
+            return logits.new_tensor(x, dtype=torch.int64).unsqueeze(0).expand((logits.shape[0], -1))
 
         term_tensor = convert_and_resize(self._terms)
         ancestor_tensor = convert_and_resize(self._ancestors)
