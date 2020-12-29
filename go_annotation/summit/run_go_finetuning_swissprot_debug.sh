@@ -8,7 +8,6 @@
 #BSUB -o /ccs/home/pstjohn/fairseq_job_output/%J.out
 #BSUB -e /ccs/home/pstjohn/fairseq_job_output/%J.err
 #BSUB -alloc_flags NVME
-#BSUB -B
 
 nnodes=$(cat ${LSB_DJOB_HOSTFILE} | sort | uniq | grep -v login | grep -v batch | wc -l)
 
@@ -35,10 +34,11 @@ jsrun -n ${nnodes} -a 1 -c 42 -r 1 cp -r ${DATA_DIR} /mnt/bb/${USER}/
 
 jsrun -n ${nnodes} -g 6 -c 42 -r1 -a1 -b none \
     fairseq-train --distributed-port 23456 \
-    --fp16 /mnt/bb/pstjohn/fairseq_swissprot \
+    /mnt/bb/pstjohn/fairseq_swissprot/ \
+    --fp16 \
     --user-dir $HOME/fairseq-uniparc/go_annotation/ \
     --restore-file $ROBERTA_PATH \
-    --task sentence_labeling --criterion go_prediction --regression-target --num-classes 32012 \
+    --task sentence_labeling --criterion sentence_prediction --regression-target --num-classes 32012 \
     --arch roberta_base --max-positions $TOKENS_PER_SAMPLE --shorten-method='random_crop' \
     --optimizer adam --adam-betas '(0.9,0.98)' --adam-eps 1e-6 --clip-norm 0.0 \
     --lr-scheduler polynomial_decay --lr $PEAK_LR --warmup-updates $WARMUP_UPDATES --total-num-update $TOTAL_UPDATES \
@@ -46,3 +46,18 @@ jsrun -n ${nnodes} -g 6 -c 42 -r1 -a1 -b none \
     --batch-size $MAX_SENTENCES --update-freq $UPDATE_FREQ --save-dir $SAVE_DIR --save-interval 1 \
     --max-update $TOTAL_UPDATES --log-format simple --log-interval 1 \
     --reset-optimizer --reset-dataloader --reset-meters
+
+
+#     fairseq-train \
+#     $DATA_DIR \
+#     --fp16 \
+#     --user-dir $HOME/fairseq-uniparc/go_annotation/ \
+#     --restore-file $ROBERTA_PATH \
+#     --task masked_lm --criterion masked_lm \
+#     --arch roberta_base --max-positions $TOKENS_PER_SAMPLE --shorten-method='random_crop' \
+#     --optimizer adam --adam-betas '(0.9,0.98)' --adam-eps 1e-6 --clip-norm 0.0 \
+#     --lr-scheduler polynomial_decay --lr $PEAK_LR --warmup-updates $WARMUP_UPDATES --total-num-update $TOTAL_UPDATES \
+#     --dropout 0.1 --attention-dropout 0.1 --weight-decay 0.01 \
+#     --batch-size $MAX_SENTENCES --update-freq $UPDATE_FREQ --save-dir $SAVE_DIR --save-interval 1 \
+#     --max-update $TOTAL_UPDATES --log-format simple --log-interval 1 \
+#     --reset-optimizer --reset-dataloader --reset-meters
