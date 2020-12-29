@@ -5,7 +5,6 @@ import torch.nn.functional as F
 from fairseq import metrics
 from fairseq.criterions import register_criterion
 from fairseq.criterions.sentence_prediction import SentencePredictionCriterion
-from torch_scatter import scatter
 
 from go_annotation.ontology import Ontology
 ont = Ontology()
@@ -15,8 +14,8 @@ class GOPredictionCriterion(SentencePredictionCriterion):
 
     def __init__(self, task, classification_head_name, regression_target):
         super(GOPredictionCriterion, self).__init__(task, classification_head_name, regression_target)
-        self._terms, self._ancestors = zip(*ont.iter_ancestor_array())  # Get node -> ancestor pairs
 
+        self._ancestor_array = ont.ancestor_array()
         head_nodes = ont.get_head_node_indices()
         self._ont_indicies = {
             'bp': ont.terms_to_indices(ont.get_descendants(ont.term_index[head_nodes[0]])),
@@ -41,14 +40,19 @@ class GOPredictionCriterion(SentencePredictionCriterion):
         def convert_and_resize(x):
             return logits.new_tensor(x, dtype=torch.int64).unsqueeze(0).expand((logits.shape[0], -1))
 
-        term_tensor = convert_and_resize(self._terms)
-        ancestor_tensor = convert_and_resize(self._ancestors)
-
         targets = model.get_targets(sample, [logits])
         sample_size = targets.numel()
 
-        # Normalize logits by ontology logic, requiring that child nodes have a lower score than parents
-        normed_logits = scatter(torch.gather(logits, 1, term_tensor).float(), ancestor_tensor, reduce='min')
+        # Normalize logits by ontology logic, requiring that child nodes have a lower score than parents.
+        # Fairly verbose, since I'm doing this without torch_scatter.
+        bsz = logits.shape[0]
+        index_tensor = logits.new_tensor(self._ancestor_array, dtype=torch.int64)
+        index_tensor = index_tensor.unsqueeze(0).expand((bsz, -1, -1))  # Array of ancestors, offset by one
+        padded_logits = torch.nn.functional.pad(logits, (1, 0), value=float('inf'))  # Make 0 index return inf
+        padded_logits = padded_logits.unsqueeze(-1).expand((-1, -1, index_tensor.shape[2]))
+        normed_logits = torch.gather(padded_logits, 1, index_tensor)
+        normed_logits, _ = torch.min(normed_logits, -1)
+
         loss = F.binary_cross_entropy_with_logits(normed_logits, targets, reduction="sum")
 
         logging_output = {
