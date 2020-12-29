@@ -45,4 +45,6 @@ jsrun -n ${nnodes} -g 6 -c 42 -r1 -a1 -b none \
     --dropout 0.1 --attention-dropout 0.1 --weight-decay 0.01 \
     --batch-size $MAX_SENTENCES --update-freq $UPDATE_FREQ --save-dir $SAVE_DIR --save-interval 1 \
     --max-update $TOTAL_UPDATES --log-format simple --log-interval 1 \
-    --reset-optimizer --reset-dataloader --reset-meters
+    --reset-optimizer --reset-dataloader --reset-meters \
+    --find-unused-parameters
+    

@@ -107,8 +107,7 @@ class SentenceLabelingTask(SentencePredictionTask):
         label_path = "{0}.npz".format(get_path("label", split))
         if os.path.exists(label_path):
             csr_matrix = load_npz(label_path)
-            labels = csr_matrix.todense().tolist()
-            dataset.update(target=RawLabelDataset(labels))
+            dataset.update(target=CSRLabelDataset(csr_matrix))
 
         nested_dataset = NestedDictionaryDataset(
             dataset,

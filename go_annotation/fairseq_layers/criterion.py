@@ -37,11 +37,8 @@ class GOPredictionCriterion(SentencePredictionCriterion):
         assert logits.shape[1] == ont.total_nodes, \
             f"classification head must match ontology nodes, {ont.total_nodes}"
 
-        def convert_and_resize(x):
-            return logits.new_tensor(x, dtype=torch.int64).unsqueeze(0).expand((logits.shape[0], -1))
-
         targets = model.get_targets(sample, [logits])
-        sample_size = targets.numel()
+        sample_size = targets.shape[0]
 
         # Normalize logits by ontology logic, requiring that child nodes have a lower score than parents.
         # Fairly verbose, since I'm doing this without torch_scatter.
@@ -61,6 +58,10 @@ class GOPredictionCriterion(SentencePredictionCriterion):
             "sample_size": sample_size,
         }
 
+
+        def convert_and_resize(x):
+            return targets.new_tensor(x, dtype=torch.int64).unsqueeze(0).expand((logits.shape[0], -1))
+        
         with torch.no_grad():
             y_pred = (normed_logits > 0).to(torch.float32)
             y_true = targets
@@ -83,8 +84,12 @@ class GOPredictionCriterion(SentencePredictionCriterion):
         sample_size = sum(log.get("sample_size", 0) for log in logging_outputs)
 
         metrics.log_scalar(
-            "loss", loss_sum / sample_size / math.log(2), sample_size, priority=5, round=3
+            "loss", loss_sum / sample_size, sample_size, priority=5, round=3
         )
+                                                                                
+        metrics.log_scalar(
+            "size", sample_size, sample_size, round=3
+        )                                                                                
 
         for ont_split in ['bp', 'mf', 'cc']:
             tp = sum(log.get(f"{ont_split}_tp", 0) for log in logging_outputs)
@@ -101,3 +106,7 @@ class GOPredictionCriterion(SentencePredictionCriterion):
             metrics.log_scalar(
                 f"{ont_split}_f1", f1, sample_size, round=3
             )
+                                                                                
+            metrics.log_scalar(
+                f"{ont_split}_tp", tp, sample_size, round=3
+            )                                                                                
