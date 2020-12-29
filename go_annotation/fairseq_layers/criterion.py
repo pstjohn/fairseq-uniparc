@@ -45,15 +45,13 @@ class GOPredictionCriterion(SentencePredictionCriterion):
 
         # Normalize logits by ontology logic, requiring that child nodes have a lower score than parents.
         # Fairly verbose, since I'm doing this without torch_scatter.
-        # bsz = logits.shape[0]
-        # index_tensor = logits.new_tensor(self._ancestor_array, dtype=torch.int64)
-        # index_tensor = index_tensor.unsqueeze(0).expand((bsz, -1, -1))  # Array of ancestors, offset by one
-        # padded_logits = torch.nn.functional.pad(logits, (1, 0), value=float('inf'))  # Make 0 index return inf
-        # padded_logits = padded_logits.unsqueeze(-1).expand((-1, -1, index_tensor.shape[2]))
-        # normed_logits = torch.gather(padded_logits, 1, index_tensor)
-        # normed_logits, _ = torch.min(normed_logits, -1)
-
-        normed_logits = logits
+        bsz = logits.shape[0]
+        index_tensor = logits.new_tensor(self._ancestor_array, dtype=torch.int64)
+        index_tensor = index_tensor.unsqueeze(0).expand((bsz, -1, -1))  # Array of ancestors, offset by one
+        padded_logits = torch.nn.functional.pad(logits, (1, 0), value=float('inf'))  # Make 0 index return inf
+        padded_logits = padded_logits.unsqueeze(-1).expand((-1, -1, index_tensor.shape[2]))
+        normed_logits = torch.gather(padded_logits, 1, index_tensor)
+        normed_logits, _ = torch.min(normed_logits, -1)
 
         loss = F.binary_cross_entropy_with_logits(normed_logits, targets, reduction="sum")
 

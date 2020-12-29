@@ -6,7 +6,7 @@ from fairseq.data import (
     ConcatSentencesDataset, IdDataset,
     NestedDictionaryDataset, NumSamplesDataset, NumelDataset,
     PrependTokenDataset,
-    RightPadDataset,
+    RawLabelDataset, RightPadDataset,
     RollDataset, SortDataset, data_utils)
 from fairseq.data.shorten_dataset import maybe_shorten_dataset
 from fairseq.tasks import register_task
@@ -107,7 +107,8 @@ class SentenceLabelingTask(SentencePredictionTask):
         label_path = "{0}.npz".format(get_path("label", split))
         if os.path.exists(label_path):
             csr_matrix = load_npz(label_path)
-            dataset.update(target=CSRLabelDataset(csr_matrix))
+            labels = csr_matrix.todense().tolist()
+            dataset.update(target=RawLabelDataset(labels))
 
         nested_dataset = NestedDictionaryDataset(
             dataset,
