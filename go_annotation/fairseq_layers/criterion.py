@@ -63,17 +63,18 @@ class GOPredictionCriterion(SentencePredictionCriterion):
             "sample_size": sample_size,
         }
 
-        y_pred = (normed_logits > 0).to(torch.float32)
-        y_true = targets
+        with torch.no_grad():
+            y_pred = (normed_logits > 0).to(torch.float32)
+            y_true = targets
 
-        for ont_split in ['bp', 'mf', 'cc']:
-            y_pred_split = torch.gather(y_pred, -1, convert_and_resize(self._ont_indicies[ont_split]))
-            y_true_split = torch.gather(y_true, -1, convert_and_resize(self._ont_indicies[ont_split]))
+            for ont_split in ['bp', 'mf', 'cc']:
+                y_pred_split = torch.gather(y_pred, -1, convert_and_resize(self._ont_indicies[ont_split]))
+                y_true_split = torch.gather(y_true, -1, convert_and_resize(self._ont_indicies[ont_split]))
 
-            logging_output[f'{ont_split}_tp'] = (y_true_split * y_pred_split).sum().to(torch.float32)
-            # logging_output[f'{ont_split}_tn'] = ((1 - y_true_split) * (1 - y_pred_split)).sum().to(torch.float32)
-            logging_output[f'{ont_split}_fp'] = ((1 - y_true_split) * y_pred_split).sum().to(torch.float32)
-            logging_output[f'{ont_split}_fn'] = (y_true_split * (1 - y_pred_split)).sum().to(torch.float32)
+                logging_output[f'{ont_split}_tp'] = (y_true_split * y_pred_split).sum().to(torch.float32)
+                # logging_output[f'{ont_split}_tn'] = ((1 - y_true_split) * (1 - y_pred_split)).sum().to(torch.float32)
+                logging_output[f'{ont_split}_fp'] = ((1 - y_true_split) * y_pred_split).sum().to(torch.float32)
+                logging_output[f'{ont_split}_fn'] = (y_true_split * (1 - y_pred_split)).sum().to(torch.float32)
 
         return loss, sample_size, logging_output
 
