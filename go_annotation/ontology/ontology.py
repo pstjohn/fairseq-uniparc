@@ -147,10 +147,8 @@ class Ontology(object):
 
         for node, node_index in self.G.nodes(data='index'):
             if node_index is not None:
-                for ancestor_index in self.terms_to_indices(
-                    self.get_ancestors(node)):
-                    
-                    yield node_index, ancestor_index
+                for i, ancestor_index in enumerate(self.terms_to_indices(self.get_ancestors(node))):
+                    yield ancestor_index, node_index, i
 
     
     def get_head_node_indices(self):
