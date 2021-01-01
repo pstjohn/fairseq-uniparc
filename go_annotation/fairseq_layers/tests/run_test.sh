@@ -4,6 +4,7 @@ fairseq-train ../../eagle/criterion_development/fairseq_swissprot_debug/ \
 	--arch roberta_base \
 	--criterion go_prediction \
 	--regression-target \
+  --classification-head-name='go_prediction' \
 	--num-classes 32012 \
 	--batch-size 2 \
 	--total-num-update 10 \
