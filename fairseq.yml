@@ -11,4 +11,6 @@ dependencies:
   - pandas
   - tqdm
   - pytorch
-  - pytorch_scatter
+  - pip
+  - pip:
+    - networkx

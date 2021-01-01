@@ -1,5 +1,4 @@
 import math
-import logging
 
 import torch
 import torch.nn.functional as F
@@ -9,9 +8,6 @@ from fairseq.criterions.sentence_prediction import SentencePredictionCriterion
 
 from go_annotation.ontology import Ontology
 ont = Ontology()
-
-logger = logging.getLogger(__name__)
-
 
 @register_criterion("go_prediction")
 class GOPredictionCriterion(SentencePredictionCriterion):
@@ -54,13 +50,12 @@ class GOPredictionCriterion(SentencePredictionCriterion):
         normed_logits = torch.gather(padded_logits, 1, index_tensor)
         normed_logits, _ = torch.min(normed_logits, -1)
 
-#         normed_logits = logits
         loss = F.binary_cross_entropy_with_logits(normed_logits, targets, reduction="sum")
 
         logging_output = {
             "loss": loss.data,
             "nsentences": sample_size,
-            "sample_size": targets.numel(),
+            "sample_size": sample_size,
         }
 
 
@@ -68,22 +63,17 @@ class GOPredictionCriterion(SentencePredictionCriterion):
             return targets.new_tensor(x, dtype=torch.int64).unsqueeze(0).expand((logits.shape[0], -1))
         
         with torch.no_grad():
-            y_pred = normed_logits > 0
-            y_true = targets > 0.5
-            
-#             logging_output['tp'] = (y_true & y_pred).sum()
-#             logging_output['tn'] = (~y_true & ~y_pred).sum()
-#             logging_output['fp'] = (~y_true & y_pred).sum()
-#             logging_output['fn'] = (y_true & ~y_pred).sum()
-            
+            y_pred = (normed_logits > 0).float()
+            y_true = targets.float()
+
             for ont_split in ['bp', 'mf', 'cc']:
                 y_pred_split = torch.gather(y_pred, -1, convert_and_resize(self._ont_indicies[ont_split]))
                 y_true_split = torch.gather(y_true, -1, convert_and_resize(self._ont_indicies[ont_split]))
 
                 logging_output[f'{ont_split}_tp'] = (y_true_split & y_pred_split).sum()
-                logging_output[f'{ont_split}_tn'] = (~y_true_split & ~y_pred_split).sum()
-                logging_output[f'{ont_split}_fp'] = (~y_true_split & y_pred_split).sum()
-                logging_output[f'{ont_split}_fn'] = (y_true_split & ~y_pred_split).sum()
+                # logging_output[f'{ont_split}_tn'] = ((1 - y_true_split) * (1 - y_pred_split)).sum().to(torch.float32)
+                logging_output[f'{ont_split}_fp'] = (y_true_split & y_pred_split).sum()
+                logging_output[f'{ont_split}_fn'] = (y_true_split & y_pred_split).sum()
 
         return loss, sample_size, logging_output
 
@@ -92,33 +82,20 @@ class GOPredictionCriterion(SentencePredictionCriterion):
         """Aggregate logging outputs from data parallel training."""
         loss_sum = sum(log.get("loss", 0) for log in logging_outputs)
         sample_size = sum(log.get("sample_size", 0) for log in logging_outputs)
-        nsentences = sum(log.get("nsentences", 0) for log in logging_outputs)
-        
 
         metrics.log_scalar(
-            "loss", loss_sum / sample_size, sample_size, priority=5, round=3
+            "loss", loss_sum / sample_size, sample_size, priority=5, round=6
         )
                                                                                 
         metrics.log_scalar(
-            "size", nsentences, sample_size, round=3
+            "size", sample_size, sample_size, round=3
         )                                                                                
-        
-#         tp = sum(log.get("tp", 0) for log in logging_outputs)
-#         tn = sum(log.get("tn", 0) for log in logging_outputs)
-#         fp = sum(log.get("fp", 0) for log in logging_outputs)
-#         fn = sum(log.get("fn", 0) for log in logging_outputs)
-        
-#         metrics.log_scalar("tp", tp, 0, round=3)        
-#         metrics.log_scalar("tn", tn, 0, round=3)        
-#         metrics.log_scalar("fp", fp, 0, round=3)        
-#         metrics.log_scalar("fn", fn, 0, round=3)        
-        
-        
+
         for ont_split in ['bp', 'mf', 'cc']:
-            tp = sum(log.get(f"{ont_split}_tp", 0) for log in logging_outputs).float()
+            tp = sum(log.get(f"{ont_split}_tp", 0) for log in logging_outputs)
             # tn = sum(log.get(f"{ont_split}_tn", 0) for log in logging_outputs)
-            fp = sum(log.get(f"{ont_split}_fp", 0) for log in logging_outputs).float()
-            fn = sum(log.get(f"{ont_split}_fn", 0) for log in logging_outputs).float()
+            fp = sum(log.get(f"{ont_split}_fp", 0) for log in logging_outputs)
+            fn = sum(log.get(f"{ont_split}_fn", 0) for log in logging_outputs)
 
             epsilon = 1e-7
 
@@ -127,12 +104,9 @@ class GOPredictionCriterion(SentencePredictionCriterion):
             f1 = 2 * (precision * recall) / (precision + recall + epsilon)
 
             metrics.log_scalar(
-                f"{ont_split}_f1", f1, 0, round=3
+                f"{ont_split}_f1", f1, sample_size, round=3
             )
                                                                                 
-#             metrics.log_scalar(
-#                 f"{ont_split}_tp", tp, sample_size, round=3
-#             )
-#             metrics.log_scalar(
-#                 f"{ont_split}_fp", fp, sample_size, round=3
-#             )                                    
+            metrics.log_scalar(
+                f"{ont_split}_tp", tp, sample_size, round=3
+            )                                                                                

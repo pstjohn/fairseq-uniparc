@@ -35,6 +35,20 @@ class SentenceLabelingTask(SentencePredictionTask):
 
         label_dict = data_dict
         return cls(args, data_dict, label_dict)
+    
+    def build_model(self, args):
+        from fairseq import models
+
+        model = models.build_model(args, self)
+
+        model.register_classification_head(
+            getattr(args, "classification_head_name", "sentence_classification_head"),
+            num_classes=self.args.num_classes,
+        )
+        
+        
+
+        return model    
 
     def load_dataset(self, split, combine=False, **kwargs):
         """Load a given dataset split (e.g., train, valid, test)."""
