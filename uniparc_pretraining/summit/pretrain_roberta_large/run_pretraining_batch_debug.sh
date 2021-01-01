@@ -23,8 +23,8 @@ WARMUP_UPDATES=24000     # Warmup the learning rate over this many updates
 PEAK_LR=0.0007           # Peak learning rate, adjust as needed
 TOKENS_PER_SAMPLE=1024   # Max sequence length
 MAX_POSITIONS=1024       # Num. positional embeddings (usually same as above)
-MAX_SENTENCES=2          # Number of sequences per batch (batch size)  (2 worked with mem-efficient)
-UPDATE_FREQ=3            # Increase the batch size 16x
+MAX_SENTENCES=1          # Number of sequences per batch (batch size)  (2 worked with mem-efficient)
+UPDATE_FREQ=8            # Increase the batch size 16x
 
 # Overall batch size is nodes * 6 * max_sentences * update_freq
 # For a batch size ~ 8k, nodes * update_freq should be ~333
@@ -39,7 +39,7 @@ DATA_LIST=`ls -1 ~/project_work/split_bin | xargs echo | sed 's/ /:\/mnt\/bb\/ps
 
 jsrun -n ${nnodes} -g 6 -c 42 -r1 -a1 -b none \
     fairseq-train --distributed-port 23456 \
-    --memory-efficient-fp16 $DATA_LIST \
+    --fp16 $DATA_LIST \
     --task masked_lm --criterion masked_lm \
     --arch roberta_large --sample-break-mode complete --tokens-per-sample $TOKENS_PER_SAMPLE --shorten-method='random_crop' \
     --optimizer adam --adam-betas '(0.9,0.98)' --adam-eps 1e-6 --clip-norm 0.0 \
