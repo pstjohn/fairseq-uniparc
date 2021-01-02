@@ -20,8 +20,8 @@ export OMP_NUM_THREADS=4
 
 NODES=$(cat ${LSB_DJOB_HOSTFILE} | sort | uniq | grep -v login | grep -v batch | wc -l)
 TOTAL_UPDATES=500000     # Total number of training steps
-WARMUP_UPDATES=24000     # Warmup the learning rate over this many updates
-PEAK_LR=0.0007           # Peak learning rate, adjust as needed
+WARMUP_UPDATES=30000     # Warmup the learning rate over this many updates
+PEAK_LR=0.0004           # Peak learning rate, adjust as needed
 TOKENS_PER_SAMPLE=1024   # Max sequence length
 MAX_POSITIONS=1024       # Num. positional embeddings (usually same as above)
 MAX_SENTENCES=1          # Number of sequences per batch (batch size)
