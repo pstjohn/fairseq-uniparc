@@ -40,10 +40,12 @@ DATA_LIST=`ls -1 ~/project_work/split_bin | xargs echo | sed 's/ /:\/mnt\/bb\/ps
 jsrun -n ${nnodes} -g 6 -c 42 -r1 -a1 -b none \
     fairseq-train --distributed-port 23456 \
     --fp16 $DATA_LIST \
-    --task masked_lm --criterion masked_lm \
+    --user-dir $HOME/fairseq-uniparc/uniparc_pretraining/ \
+    --task masked_lm_bias --criterion masked_lm --untie-weights-roberta \
     --arch roberta_large --sample-break-mode complete --tokens-per-sample $TOKENS_PER_SAMPLE --shorten-method='random_crop' \
     --optimizer adam --adam-betas '(0.9,0.98)' --adam-eps 1e-6 --clip-norm 0.0 \
     --lr-scheduler polynomial_decay --lr $PEAK_LR --warmup-updates $WARMUP_UPDATES --total-num-update $TOTAL_UPDATES \
     --dropout 0.1 --attention-dropout 0.1 --weight-decay 0.01 \
     --batch-size $MAX_SENTENCES --update-freq $UPDATE_FREQ --save-dir $SAVE_DIR --save-interval 1 --no-epoch-checkpoints \
+    --tensorboard-logdir=$MEMBERWORK/bie108/fairseq-tensorboard/$LSB_JOBNAME \
     --max-update $TOTAL_UPDATES --log-format simple --log-interval 1 --reset-dataloader

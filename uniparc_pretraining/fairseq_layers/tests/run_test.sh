@@ -1,12 +1,11 @@
-fairseq-train ../../eagle/criterion_development/fairseq_swissprot_debug/ \
-	--task sentence_labeling \
-	--user-dir ../../../go_annotation/ \
+fairseq-train fairseq_swissprot_debug \
+	--user-dir ../../../uniparc_pretraining/ \
 	--arch roberta_base \
-	--criterion go_prediction \
-	--regression-target \
-  --classification-head-name='go_prediction' \
-	--num-classes 32012 \
+	--task masked_lm_bias \
+	--criterion masked_lm \
 	--batch-size 2 \
+	--untie-weights-roberta \
+	--sample-break-mode complete \
 	--total-num-update 10 \
 	--max-positions 512 \
  	--shorten-method='random_crop' \

@@ -12,6 +12,7 @@ from fairseq.data.shorten_dataset import maybe_shorten_dataset
 from fairseq.tasks import register_task
 from fairseq.tasks.sentence_prediction import SentencePredictionTask
 from scipy.sparse import load_npz
+from scipy.special import logit
 
 from go_annotation.fairseq_layers.dataset import CSRLabelDataset
 
@@ -35,6 +36,36 @@ class SentenceLabelingTask(SentencePredictionTask):
 
         label_dict = data_dict
         return cls(args, data_dict, label_dict)
+
+    def build_model(self, args):
+        from fairseq import models
+
+        model = models.build_model(args, self)
+
+        head_name = getattr(args, "classification_head_name", "sentence_classification_head")
+
+        update_bias = False
+        if head_name == 'go_prediction' and head_name not in model.classification_heads:
+            update_bias = True
+
+        model.register_classification_head(
+            head_name,
+            num_classes=self.args.num_classes,
+        )
+
+        if update_bias:
+
+            train_annotations = load_npz(os.path.join(self.args.data, 'label', 'train.npz'))
+            epsilon = 1E-8
+            initial_bias = logit((np.asarray(train_annotations.sum(0)).squeeze() /
+                                  train_annotations.shape[0]) + epsilon)
+
+            assert len(initial_bias) == self.args.num_classes, "Data / num_classes mismatch"
+            bias = model.classification_heads[head_name].out_proj.bias.data
+            model.classification_heads[head_name].out_proj.bias.data = bias.new(initial_bias)
+            logger.info("Updated GO prediction head bias")
+
+        return model
 
     def load_dataset(self, split, combine=False, **kwargs):
         """Load a given dataset split (e.g., train, valid, test)."""

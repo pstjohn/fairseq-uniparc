@@ -18,8 +18,7 @@ conda activate fairseq_1.7.1
 export OMP_NUM_THREADS=4
 
 NODES=$(cat ${LSB_DJOB_HOSTFILE} | sort | uniq | grep -v login | grep -v batch | wc -l)
-TOTAL_UPDATES=54246      # Total number of training steps
-WARMUP_UPDATES=100       # Warmup the learning rate over this many updates
+TOTAL_UPDATES=10000      # Total updates
 PEAK_LR=1e-05            # Peak learning rate, adjust as needed
 TOKENS_PER_SAMPLE=1024   # Max sequence length
 MAX_POSITIONS=1024       # Num. positional embeddings (usually same as above)
@@ -28,7 +27,7 @@ UPDATE_FREQ=2            # Increase the batch size 2x
 
 SAVE_DIR=$MEMBERWORK/bie108/fairseq-uniparc/$LSB_JOBNAME
 DATA_DIR=/gpfs/alpine/bie108/proj-shared/swissprot_go_annotation/fairseq_swissprot
-ROBERTA_PATH=$MEMBERWORK/bie108/fairseq-uniparc/roberta_base_checkpoint/roberta.base_with_go_bias.pt
+ROBERTA_PATH=$MEMBERWORK/bie108/fairseq-uniparc/roberta_base_checkpoint/checkpoint_best.pt
 
 jsrun -n ${nnodes} -a 1 -c 42 -r 1 cp -r ${DATA_DIR} /mnt/bb/${USER}/
 
@@ -41,13 +40,14 @@ jsrun -n ${nnodes} -g 6 -c 42 -r1 -a1 -b none \
     --task sentence_labeling --criterion go_prediction --regression-target --num-classes 32012 \
     --arch roberta_base --max-positions $TOKENS_PER_SAMPLE --shorten-method='random_crop' \
     --optimizer adam --adam-betas '(0.9,0.98)' --adam-eps 1e-6 --clip-norm 0.0 \
-    --lr-scheduler polynomial_decay --lr $PEAK_LR --warmup-updates $WARMUP_UPDATES --total-num-update $TOTAL_UPDATES \
+    --lr $PEAK_LR \
     --dropout 0.1 --attention-dropout 0.1 --weight-decay 0.01 \
     --validate-interval-updates 500 \
     --save-interval-updates 2000 --keep-interval-updates 1 \
     --batch-size $MAX_SENTENCES --update-freq $UPDATE_FREQ --save-dir $SAVE_DIR \
     --max-update $TOTAL_UPDATES --log-format simple --log-interval 10 \
     --reset-optimizer --reset-dataloader --reset-meters \
+    --tensorboard-logdir=$MEMBERWORK/bie108/fairseq-tensorboard \
     --find-unused-parameters
     
 
