@@ -9,6 +9,7 @@
 #BSUB -e /ccs/home/pstjohn/fairseq_job_output/%J.err
 #BSUB -alloc_flags NVME
 #BSUB -B
+#BSUB -w ended(627128)
 
 nnodes=$(cat ${LSB_DJOB_HOSTFILE} | sort | uniq | grep -v login | grep -v batch | wc -l)
 

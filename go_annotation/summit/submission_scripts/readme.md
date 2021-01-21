@@ -1,0 +1,1 @@
+make sure to fix --init-token=0 for the rest of the scripts before submission
