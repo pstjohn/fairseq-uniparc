@@ -1,19 +1,18 @@
 fairseq-train ../../eagle/criterion_development/fairseq_swissprot_debug/ \
-	--task sentence_labeling \
-	--user-dir ../../../go_annotation/ \
-	--arch roberta_base \
-	--criterion go_prediction \
-	--regression-target \
+  --task sentence_labeling \
+  --user-dir ../../../go_annotation/ \
+  --criterion go_prediction \
+  --regression-target \
   --classification-head-name='go_prediction' \
-	--num-classes 32012 \
-	--batch-size 2 \
-	--total-num-update 10 \
-	--max-positions 512 \
- 	--shorten-method='random_crop' \
-	--reset-optimizer --reset-dataloader --reset-meters \
-	--weight-decay 0.1 --optimizer adam --adam-betas "(0.9, 0.98)" --adam-eps 1e-06 \
-	--clip-norm 0.0 \
-	--lr-scheduler polynomial_decay --lr 1e-05 \
-	--dropout 0.1 --attention-dropout 0.1 \
-	--save-interval 1 \
-	--log-format simple --log-interval 1
+  --num-classes 32012 \
+  --batch-size 2 \
+  --total-num-update 10 \
+  --shorten-method='random_crop' \
+  --reset-optimizer --reset-dataloader --reset-meters \
+  --weight-decay 0.1 --optimizer adam --adam-betas "(0.9, 0.98)" --adam-eps 1e-06 \
+  --clip-norm 0.0 \
+  --lr-scheduler polynomial_decay --lr 1e-05 \
+  --arch esm1_t6 \
+  --max-positions 1024 \
+  --save-interval 1 \
+  --log-format simple --log-interval 1
