@@ -13,6 +13,6 @@ fairseq-train ../../eagle/criterion_development/fairseq_swissprot_debug/ \
   --clip-norm 0.0 \
   --lr-scheduler polynomial_decay --lr 1e-05 \
   --arch esm1_t6 \
-  --max-positions 512 \
+  --max-positions 1024 \
   --save-interval 1 \
   --log-format simple --log-interval 1

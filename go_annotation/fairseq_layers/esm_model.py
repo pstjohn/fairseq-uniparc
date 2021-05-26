@@ -70,7 +70,7 @@ class ESMModel(RobertaModel):
         model, alphabet = torch.hub.load("facebookresearch/esm", args.esm_architecture)  # fix
         dictionary = alphabet_to_dictionary(alphabet)
         encoder = ESMEncoder(model, dictionary)
-        assert args.max_positions == model.args.max_positions
+        assert args.max_positions <= model.args.max_positions
 
         return cls(args, encoder)
 
